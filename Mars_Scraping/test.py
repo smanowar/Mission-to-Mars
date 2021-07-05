@@ -12,6 +12,7 @@ def scrape_all():
     browser = Browser('chrome', **executable_path, headless=True)
 
     news_title, news_paragraph = mars_news(browser)
+    hemisphere = scrape_hemisphere_data(browser)
 
     # Run all scraping functions and store results in a dictionary
     data = {
@@ -19,6 +20,7 @@ def scrape_all():
         "news_paragraph": news_paragraph,
         "featured_image": featured_image(browser),
         "facts": mars_facts(),
+        "hemispheres": hemisphere,
         "last_modified": dt.datetime.now()
     }
 
@@ -97,6 +99,53 @@ def mars_facts():
     # Convert dataframe into HTML format, add bootstrap
     return df.to_html(classes="table table-striped")
 
+
+def scrape_hemisphere_data(browser):
+
+    # visit the URL 
+    url = 'https://marshemispheres.com/'
+    browser.visit(url)
+
+    hemi_html = browser.html
+    hemi_soup = soup(hemi_html, 'html.parser')
+    
+    hemisphere_images = hemi_soup.find_all('div', class_='item')
+    
+    # 2. Create a list to hold the images and titles.
+    hemisphere_image_urls = []
+
+    # Create loop to scrape through all hemisphere information
+    for item in hemisphere_images:
+        hemisphere = {}
+
+
+#find the title
+        titles = item.find('h3').text
+        
+        #find the path for the corresponding title
+        image_path = item.find('a', class_='itemLink product-item')['href']
+        
+        #scrape the image path to get the .jpg path
+        browser.visit(url + image_path)
+        
+        # parse the data to get .jpg
+        jpg_html = browser.html
+        jpg_soup = soup(jpg_html, 'html.parser')
+        jpg_image_path = jpg_soup.find('div', class_= 'downloads')
+        image_url = jpg_image_path.find('a')['href']
+        
+        print(titles)
+        print(image_url)
+
+    hemispheres = {
+        'img_url': image_url,
+        'title': titles,
+    }
+    hemisphere_image_urls.append(hemispheres)
+       
+    return hemisphere_image_urls
+        
+                   
 if __name__ == "__main__":
 
     # If running as script, print scraped data
